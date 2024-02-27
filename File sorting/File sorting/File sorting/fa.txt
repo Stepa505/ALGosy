@@ -1,1 +1,0 @@
--1 stop -6 stop -6 -2 stop -8 -3 10 stop 3 4 6 9 stop 

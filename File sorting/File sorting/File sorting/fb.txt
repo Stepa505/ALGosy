@@ -1,1 +1,0 @@
--7 7 stop -10 1 8 stop -4 stop -7 2 7 stop 
