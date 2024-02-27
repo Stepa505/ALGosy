@@ -1,111 +1,107 @@
 #include <iostream>
 #include <fstream>
-#include<vector>
+#include <vector>
 #include <random>
 #include <string>
 #include <stdio.h>
 
-void random_file_gen(const char* name, int& lim, int& size) {
+bool random_file_gen(const std::string& name, int& lim, int& size) {
 	int l_lim = -lim;
 	int r_lim = lim;
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_int_distribution<int> dist(l_lim, r_lim);
-	std::ofstream file(name);
+	std::ofstream file;
+	file.open(name);
+	if (!file) {
+		puts("File open error!");
+		return false;
+	}
 	for (int i = 0; i < size; i++) {
 		int x = dist(gen);
 		file << x << " ";
 	}
 	file.close();
-}
-
-void file_splitting_1(int* arr) {
-	int count = 1;
-	int i = 0;
-	std::fstream f1("f1.txt");
-	std::fstream f2("f2.txt");
-	for (int j = 0; ;j++) {
-		if (count == 1) {
-			for (; i < sizeof(arr) - 1; i++) {
-				if (arr[i] >= arr[i + 1])  f1 << arr[i] << " ";
-				else {
-					f1 << arr[i] << " ";
-					count = 2;
-					break;
-				}
-			}
-		}
-		else if (count == 2) {
-			for (; i < sizeof(arr) - 1; i++) {
-				if (arr[i] >= arr[i + 1])  f2 << arr[i] << " ";
-				else {
-					f2 << arr[i] << " ";
-					count = 1;
-					break;
-				}
-			}
-		}
-	}
-	f1.close();
-	f2.close();
-}
-
-void file_splitting_2(const std::string name1, const std::string name2, int* arr1, int* arr2) {
-
+	return true;
 }
 
 int main() {
 	int size, lim;
+	std::cout << "Enter the size of range of numbers in file: ";
 	std::cin >> lim;
 	puts("");
+	std::cout << "Enter the size of file: ";
 	std::cin >> size;
 	puts("");
-	int* arr = new int[size];
-	FILE* f = fopen("f.txt", "rt");
-	if (f == nullptr) {
-		puts("File open error!");
-		return -1;
-	}
-	for (int i = 1; i == 4; i++) {
-		std::string name = "f" + std::to_string(i) + ".txt";
-		FILE* name = fopen(name.c_str(), "wt");
-		if (name.c_str() == nullptr) {
-			puts("File open error!");
-			return -1;
+	std::string name = "f.txt";
+	random_file_gen(name, size, lim);
+	//random_file_gen(name, lim, size);
+	std::fstream f(name);
+	if (!f) return -1;
+
+	std::ofstream f1;
+	f1.open("fa.txt");
+	if (!f1) return -2;
+	f1.close();
+	std::fstream fa;
+	fa.open("fa.txt");
+
+	std::ofstream f2;
+	f2.open("fb.txt");
+	if (!f2) return -3;
+	f2.close();
+	std::fstream fb;
+	fb.open("fb.txt");
+
+	//firts splitting
+	int a, b;
+	f >> a;
+	f >> b;
+	int count = 1;
+	while (f) {
+		if (a < b && count == 1) {
+			fa << a << " ";
+			a = b;
+			f >> b;
+		}
+		else if (a < b && count == 2) {
+			fb << a << " ";
+			a = b;
+			f >> b;
+		}
+		else if (a >= b && count == 1) {
+			fa << a << " " << INT_MIN << " ";
+			a = b;
+			f >> b;
+			count = 2;
+		}
+		else if (a >= b && count == 2) {
+			fb << a << " " << INT_MIN << " ";
+			a = b;
+			f >> b;
+			count = 1;
 		}
 	}
-	//FILE* fa = fopen("f.txt", "wt");
-	//if (fa == nullptr) {
-	//	puts("File open error!");
-	//	return -1;
-	//}
-	//FILE* fb = fopen("f.txt", "wt");
-	//if (fb == nullptr) {
-	//	puts("File open error!");
-	//	return -1;
-	//}
-	//FILE* fc = fopen("f.txt", "wt");
-	//if (fc == nullptr) {
-	//	puts("File open error!");
-	//	return -1;
-	//}
-	//FILE* fd = fopen("f.txt", "wt");
-	//if (fd == nullptr) {
-	//	puts("File open error!");
-	//	return -1;
-	//}
-	random_file_gen("f.txt", lim, size);
-	int* arr;
-	arr = new int[size];
-	while (!feof(f)) {
-		std::ifstream file(f);
-		for (int i = 0; i < size; i++) {
-			file >> arr[i];
-		}
-	};
-	std::string file_name = "f1";
-	while ("f1.txt" != nullptr || "f2.txt" != nullptr || "f3.txt" != nullptr || "f4.txt" != nullptr) {
+	if (count == 1) fa << b << " " << INT_MIN;
+	else if (count == 2) fb << b << " " << INT_MIN;
 
-	}
+	std::ofstream f3;
+	f3.open("fc.txt");
+	if (!f3) return -4;
+	f3.close();
+	std::fstream fc;
+	fc.open("fc.txt");
 
+	std::ofstream f4;
+	f4.open("fd.txt");
+	if (!f4) return -5;
+	f4.close();
+	std::fstream fd;
+	fd.open("fd.txt");
+
+	f.close();
+	fa.close();
+	fb.close();
+	fc.close();
+	fd.close();
 }
