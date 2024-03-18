@@ -5,6 +5,29 @@
 #include <string>
 #include <stdio.h>
 
+struct Element {
+	int value = 0;
+	bool isValid = false;
+	void read(std::ifstream& file) {
+		file >> value;
+		isValid = bool(file);
+	}
+	bool operator <=(Element& b) const;
+};
+
+bool Element::operator <=(Element& b) const {
+	if (value <= b.value) return true;
+	else return false;
+}
+
+bool readNext(std::ifstream& input, std::ofstream& output, Element& a, Element& b) {
+	output << a.value << " ";
+	bool ended = !(b.isValid && a <= b);
+	a = b;
+	b.read(input);
+	return !ended;
+}
+
 void trade(std::string& a, std::string& b) {
 	std::string c;
 	c = a;
@@ -41,98 +64,125 @@ bool file_merge(std::string& name1, std::string& name2, std::string& name3, std:
 	if (!fc) return -1;
 	std::ofstream fd(name4);
 	if (!fd) return -1;
-
-	int a, b, c, d;
-	fa >> a >> b;
-	fb >> c >> d;
+	Element a, b, c, d;
+	a.read(fa);
+	b.read(fa);
+	c.read(fb);
+	d.read(fb);
+	bool fa_ended, fb_ended;
+	if (a <= b) fa_ended = false;
+	else fa_ended = true;
+	if (c <= d) fb_ended = false;
+	else fb_ended = true;
 	while (fa || fb) {
-		bool otherSequenceEnded = !fa || !fb /*false*/, fa_end = false;
-		while ((fa && a <= b) && (fb && c <= d)) {
+		bool otherSequenceEnd = false;
+
+		while (!fa_ended && !fb_ended) {
 			if (a <= c) {
-				fc << a << " ";
-				a = b;
-				fa >> b;
+				fa_ended = readNext(fa, fc, a, b);
 			}
 			else {
-				fc << c << " ";
-				c = d;
-				fb >> d;
+				fb_ended = readNext(fb, fc, c, d);
 			}
 		}
-		while (fa && a <= b) {
-			if (otherSequenceEnded || a <= c) {
-				fc << a << " ";
-				a = b;
-				fa >> b;
+
+		while (!fa_ended) {
+			if ((otherSequenceEnd || a <= c) && a.isValid) {
+				fa_ended = readNext(fa, fc, a, b);
 			}
-			else {
-				fc << c << " ";
-				c = d;
-				fb >> d;
-				otherSequenceEnded = true;
+			else if (c.isValid && !otherSequenceEnd) {
+				fb_ended = readNext(fb, fc, c, d);
+				otherSequenceEnd = true;
 			}
-			if (!fa || a > b) { //проверка на конец цикла для записи оставшегося числа
-				if (!otherSequenceEnded) {
-					if (a <= c) {
-						fc << a << " " << c << " ";
-					}
-					else if (c < a) {
-						fc << c << " " << a << " ";
-					}
-					otherSequenceEnded = true;
+			if (fa_ended) {
+				if (otherSequenceEnd && a.isValid) {
+					fa_ended = readNext(fa, fc, a, b);
 				}
 				else {
-					fc << a << " ";
+					if (c <= a && a.isValid && c.isValid) {
+						fb_ended = readNext(fb, fc, c, d);
+						fa_ended = readNext(fa, fc, a, b);
+					}
+					else if (a.isValid && c.isValid) {
+						fa_ended = readNext(fa, fc, a, b);
+						fb_ended = readNext(fb, fc, c, d);
+					}
+					else if (a.isValid) {
+						fa_ended = readNext(fa, fc, a, b);
+					}
+					else if (c.isValid) {
+						fb_ended = readNext(fb, fc, c, d);
+					}
 				}
-				fa_end = true;
+				fc.swap(fd);
+				break;
 			}
-
 		}
-		while (fb && c <= d) {
-			if (otherSequenceEnded || c <= a) {
-				fc << c << " ";
-				c = d;
-				fb >> d;
+
+		while (!fb_ended) {
+			if ((otherSequenceEnd || c <= a) && c.isValid) {
+				fb_ended = readNext(fb, fc, c, d);
+			}
+			else if(a.isValid && !otherSequenceEnd){
+				fa_ended = readNext(fa, fc, a, b);
+				otherSequenceEnd = true;
+			}
+			if (fb_ended) {
+				if (otherSequenceEnd && c.isValid) {
+					fb_ended = readNext(fb, fc, c, d);
+				}
+				else {
+					if (c <= a && a.isValid && c.isValid) {
+						fb_ended = readNext(fb, fc, c, d);
+						fa_ended = readNext(fa, fc, a, b);
+					}
+					else if(a.isValid && c.isValid){
+						fa_ended = readNext(fa, fc, a, b);
+						fb_ended = readNext(fb, fc, c, d);
+					}
+					else if (a.isValid) {
+						fa_ended = readNext(fa, fc, a, b);
+					}
+					else if (c.isValid) {
+						fb_ended = readNext(fb, fc, c, d);
+					}
+				}
+			}
+			fc.swap(fd);
+			break;
+		}
+
+		if (!fa && !fb && a.isValid && c.isValid) {
+			if (a <= c) {
+				readNext(fa, fc, a, b);
+				readNext(fb, fc, c, d);
 			}
 			else {
-				fc << a << " ";
-				a = b;
-				fa >> b;
-				otherSequenceEnded = true;
-			}
-
-			if (!fa_end && (c > d || !fb)) { //!fa_end - проверка конца последовательности файла fa
-				if (!otherSequenceEnded) {
-					if (a <= c) {
-						fc << a << " " << c << " ";
-					}
-					else if (c < a) {
-						fc << c << " " << a << " ";
-					}
-				}
-				else if (otherSequenceEnded) {
-					fc << c << " ";
-				}
+				readNext(fb, fc, c, d);
+				readNext(fa, fc, a, b);
 			}
 		}
-		c = d;
-		fb >> d;
-		a = b;
-		fa >> b;
-		fc.swap(fd);
+		else if (!fa && a.isValid) {
+			readNext(fa, fc, a, b);
+		}
+		else if (!fb && c.isValid) {
+			readNext(fb, fc, c, d);
+		}
 	}
+
 	fa.close();
 	fb.close();
 	fc.close();
 	fd.close();
 	std::ifstream res(name4);
+
 	if (res.peek() == EOF) {
 		res.close();
-		return 1;
+		return true;
 	}
 	else {
 		res.close();
-		return -1;
+		return false;
 	}
 }
 
@@ -144,12 +194,10 @@ int main() {
 	std::cout << "Enter the size of file: ";
 	std::cin >> size;
 	puts("");
-
 	std::string name = "f.txt";
 	//random_file_gen(name, lim, size);
 	std::fstream f(name);
 	if (!f) return -1;
-
 	std::ofstream f1;
 	f1.open("fa.txt");
 	if (!f1) return -2;
@@ -199,10 +247,10 @@ int main() {
 
 	//other splittings
 	file_merge(name1, name2, name3, name4);
-	trade(name1, name3);
-	trade(name2, name4);
-	file_merge(name1, name2, name3, name4);
-	trade(name1, name3);
-	trade(name2, name4);
-	file_merge(name1, name2, name3, name4); //написано не через цикл для проверки на каждом шаге
+	//trade(name1, name3);
+	//trade(name2, name4);
+	//file_merge(name1, name2, name3, name4);
+	//trade(name1, name3);
+	//trade(name2, name4);
+	//file_merge(name1, name2, name3, name4); //написано не через цикл для проверки на каждом шаге
 }
