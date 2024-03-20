@@ -13,10 +13,16 @@ struct Element {
 		isValid = bool(file);
 	}
 	bool operator <=(Element& b) const;
+	bool operator >(Element& b) const;
 };
 
 bool Element::operator <=(Element& b) const {
 	if (value <= b.value) return true;
+	else return false;
+}
+
+bool Element::operator >(Element& b) const {
+	if (value > b.value) return true;
 	else return false;
 }
 
@@ -69,88 +75,88 @@ bool file_merge(std::string& name1, std::string& name2, std::string& name3, std:
 	b.read(fa);
 	c.read(fb);
 	d.read(fb);
-	bool fa_ended, fb_ended;
-	if (a <= b) fa_ended = false;
-	else fa_ended = true;
-	if (c <= d) fb_ended = false;
-	else fb_ended = true;
 	while (fa || fb) {
-		bool otherSequenceEnd = false;
+		bool otherSequenceEnd1 = false;
 
-		while (!fa_ended && !fb_ended) {
+		while (fa && a <= b && fb && c <= d) {
 			if (a <= c) {
-				fa_ended = readNext(fa, fc, a, b);
+				readNext(fa, fc, a, b);
 			}
 			else {
-				fb_ended = readNext(fb, fc, c, d);
+				readNext(fb, fc, c, d);
 			}
 		}
 
-		while (!fa_ended) {
-			if ((otherSequenceEnd || a <= c) && a.isValid) {
-				fa_ended = readNext(fa, fc, a, b);
+		while (fa && a <= b) {
+			if ((otherSequenceEnd1 || a <= c) && a.isValid) {
+				readNext(fa, fc, a, b);
 			}
-			else if (c.isValid && !otherSequenceEnd) {
-				fb_ended = readNext(fb, fc, c, d);
-				otherSequenceEnd = true;
+			else if (c.isValid && !otherSequenceEnd1) {
+				readNext(fb, fc, c, d);
+				otherSequenceEnd1 = true;
 			}
-			if (fa_ended) {
-				if (otherSequenceEnd && a.isValid) {
-					fa_ended = readNext(fa, fc, a, b);
+			if (!fa || a > b) {
+				if (otherSequenceEnd1 && a.isValid) {
+					readNext(fa, fc, a, b);
 				}
 				else {
 					if (c <= a && a.isValid && c.isValid) {
-						fb_ended = readNext(fb, fc, c, d);
-						fa_ended = readNext(fa, fc, a, b);
+						readNext(fb, fc, c, d);
+						readNext(fa, fc, a, b);
+						otherSequenceEnd1 = true;
 					}
 					else if (a.isValid && c.isValid) {
-						fa_ended = readNext(fa, fc, a, b);
-						fb_ended = readNext(fb, fc, c, d);
+						readNext(fa, fc, a, b);
+						readNext(fb, fc, c, d);
+						otherSequenceEnd1 = true;
 					}
 					else if (a.isValid) {
-						fa_ended = readNext(fa, fc, a, b);
+						readNext(fa, fc, a, b);
+						otherSequenceEnd1 = true;
 					}
 					else if (c.isValid) {
-						fb_ended = readNext(fb, fc, c, d);
+						readNext(fb, fc, c, d);
+						otherSequenceEnd1 = true;
 					}
 				}
-				fc.swap(fd);
 				break;
 			}
 		}
-
-		while (!fb_ended) {
-			if ((otherSequenceEnd || c <= a) && c.isValid) {
-				fb_ended = readNext(fb, fc, c, d);
-			}
-			else if(a.isValid && !otherSequenceEnd){
-				fa_ended = readNext(fa, fc, a, b);
-				otherSequenceEnd = true;
-			}
-			if (fb_ended) {
-				if (otherSequenceEnd && c.isValid) {
-					fb_ended = readNext(fb, fc, c, d);
+		if (!otherSequenceEnd1) {
+			while (fb && c <= d) {
+				if ((otherSequenceEnd1 || c <= a) && c.isValid) {
+					readNext(fb, fc, c, d);
 				}
-				else {
-					if (c <= a && a.isValid && c.isValid) {
-						fb_ended = readNext(fb, fc, c, d);
-						fa_ended = readNext(fa, fc, a, b);
+				else if (a.isValid && !otherSequenceEnd1) {
+					readNext(fa, fc, a, b);
+					otherSequenceEnd1 = true;
+				}
+				if (!fb || c > d) {
+					if (otherSequenceEnd1 && c.isValid) {
+						readNext(fb, fc, c, d);
 					}
-					else if(a.isValid && c.isValid){
-						fa_ended = readNext(fa, fc, a, b);
-						fb_ended = readNext(fb, fc, c, d);
+					else {
+						if (c <= a && a.isValid && c.isValid) {
+							readNext(fb, fc, c, d);
+							readNext(fa, fc, a, b);
+						}
+						else if (a.isValid && c.isValid) {
+							readNext(fa, fc, a, b);
+							readNext(fb, fc, c, d);
+						}
+						else if (a.isValid) {
+							readNext(fa, fc, a, b);
+						}
+						else if (c.isValid) {
+							readNext(fb, fc, c, d);
+						}
 					}
-					else if (a.isValid) {
-						fa_ended = readNext(fa, fc, a, b);
-					}
-					else if (c.isValid) {
-						fb_ended = readNext(fb, fc, c, d);
-					}
+					break;
 				}
 			}
-			fc.swap(fd);
-			break;
 		}
+
+		fc.swap(fd);
 
 		if (!fa && !fb && a.isValid && c.isValid) {
 			if (a <= c) {
@@ -162,10 +168,10 @@ bool file_merge(std::string& name1, std::string& name2, std::string& name3, std:
 				readNext(fa, fc, a, b);
 			}
 		}
-		else if (!fa && a.isValid) {
+		else if (!fa && !fb && a.isValid) {
 			readNext(fa, fc, a, b);
 		}
-		else if (!fb && c.isValid) {
+		else if (!fb && !fa && c.isValid) {
 			readNext(fb, fc, c, d);
 		}
 	}
@@ -195,7 +201,7 @@ int main() {
 	std::cin >> size;
 	puts("");
 	std::string name = "f.txt";
-	//random_file_gen(name, lim, size);
+	random_file_gen(name, lim, size);
 	std::fstream f(name);
 	if (!f) return -1;
 	std::ofstream f1;
@@ -246,11 +252,13 @@ int main() {
 	std::string name4 = "fd.txt";
 
 	//other splittings
-	file_merge(name1, name2, name3, name4);
-	//trade(name1, name3);
-	//trade(name2, name4);
-	//file_merge(name1, name2, name3, name4);
-	//trade(name1, name3);
-	//trade(name2, name4);
-	//file_merge(name1, name2, name3, name4); //написано не через цикл для проверки на каждом шаге
+	bool res = false;
+	while (!res) {
+		res = file_merge(name1, name2, name3, name4);
+		trade(name1, name3);
+		trade(name2, name4);
+	}
+	std::cout << "Result in file " << name1;
+
+	return 0;
 }
